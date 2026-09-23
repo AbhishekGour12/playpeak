@@ -424,39 +424,87 @@ const AdminDashboard = () => {
 
     const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/';
 
-    // Fetch live data from MongoDB Atlas on component mount
-    useEffect(() => {
-        const fetchMongoData = async () => {
-            try {
-                const [athRes, payRes, coachRes, tourRes, phyRes, asmRes, invRes, planRes, inqRes] = await Promise.allSettled([
-                    axios.get(`${API_BASE}athletes`),
-                    axios.get(`${API_BASE}payments`),
-                    axios.get(`${API_BASE}coaches`),
-                    axios.get(`${API_BASE}tournaments`),
-                    axios.get(`${API_BASE}physio`),
-                    axios.get(`${API_BASE}assessments`),
-                    axios.get(`${API_BASE}inventory`),
-                    axios.get(`${API_BASE}memberships`),
-                    axios.get(`${API_BASE}inquiries`),
-                ]);
+    // Fetch live data from MongoDB Atlas on component mount & periodic sync
+    const fetchMongoData = async () => {
+        try {
+            const [athRes, payRes, coachRes, tourRes, phyRes, asmRes, invRes, planRes, inqRes] = await Promise.allSettled([
+                axios.get(`${API_BASE}athletes`),
+                axios.get(`${API_BASE}payments`),
+                axios.get(`${API_BASE}coaches`),
+                axios.get(`${API_BASE}tournaments`),
+                axios.get(`${API_BASE}physio`),
+                axios.get(`${API_BASE}assessments`),
+                axios.get(`${API_BASE}inventory`),
+                axios.get(`${API_BASE}memberships`),
+                axios.get(`${API_BASE}inquiries`),
+            ]);
 
-                if (athRes.status === 'fulfilled' && athRes.value.data?.data?.length > 0) setAthletes(athRes.value.data.data);
-                if (payRes.status === 'fulfilled' && payRes.value.data?.data?.length > 0) setPayments(payRes.value.data.data);
-                if (coachRes.status === 'fulfilled' && coachRes.value.data?.data?.length > 0) setCoaches(coachRes.value.data.data);
-                if (tourRes.status === 'fulfilled' && tourRes.value.data?.data?.length > 0) setTournaments(tourRes.value.data.data);
-                if (phyRes.status === 'fulfilled' && phyRes.value.data?.data?.length > 0) setPhysioLogs(phyRes.value.data.data);
-                if (asmRes.status === 'fulfilled' && asmRes.value.data?.data?.length > 0) setAssessments(asmRes.value.data.data);
-                if (invRes.status === 'fulfilled' && invRes.value.data?.data?.length > 0) setInventory(invRes.value.data.data);
-                if (planRes.status === 'fulfilled' && planRes.value.data?.data?.length > 0) setMemberships(planRes.value.data.data);
-                if (inqRes.status === 'fulfilled' && inqRes.value.data?.data?.length > 0) setInquiries(inqRes.value.data.data);
-            } catch (err) {
-                console.warn('MongoDB Atlas connection sync:', err.message);
+            if (athRes.status === 'fulfilled' && athRes.value.data?.data?.length > 0) setAthletes(athRes.value.data.data);
+            if (payRes.status === 'fulfilled' && payRes.value.data?.data?.length > 0) setPayments(payRes.value.data.data);
+            if (coachRes.status === 'fulfilled' && coachRes.value.data?.data?.length > 0) setCoaches(coachRes.value.data.data);
+            if (tourRes.status === 'fulfilled' && tourRes.value.data?.data?.length > 0) setTournaments(tourRes.value.data.data);
+            if (phyRes.status === 'fulfilled' && phyRes.value.data?.data?.length > 0) setPhysioLogs(phyRes.value.data.data);
+            if (asmRes.status === 'fulfilled' && asmRes.value.data?.data?.length > 0) setAssessments(asmRes.value.data.data);
+            if (invRes.status === 'fulfilled' && invRes.value.data?.data?.length > 0) setInventory(invRes.value.data.data);
+            if (planRes.status === 'fulfilled' && planRes.value.data?.data?.length > 0) setMemberships(planRes.value.data.data);
+            if (inqRes.status === 'fulfilled' && inqRes.value.data?.data?.length > 0) setInquiries(inqRes.value.data.data);
+        } catch (err) {
+            console.warn('MongoDB Atlas connection sync:', err.message);
+        }
+    };
+
+    // Initial fetch & interval polling for background multi-device real-time sync
+    useEffect(() => {
+        fetchMongoData();
+
+        // 5-second background sync for live updates from other devices / QR scans
+        const interval = setInterval(() => {
+            fetchMongoData();
+            const savedAthletes = localStorage.getItem('playpeak_athletes');
+            if (savedAthletes) {
+                try {
+                    const parsed = JSON.parse(savedAthletes);
+                    setAthletes(prev => {
+                        if (JSON.stringify(prev) !== JSON.stringify(parsed)) {
+                            return parsed;
+                        }
+                        return prev;
+                    });
+                } catch (e) {}
+            }
+            const savedPayments = localStorage.getItem('playpeak_payments');
+            if (savedPayments) {
+                try {
+                    const parsedPay = JSON.parse(savedPayments);
+                    setPayments(prev => {
+                        if (JSON.stringify(prev) !== JSON.stringify(parsedPay)) {
+                            return parsedPay;
+                        }
+                        return prev;
+                    });
+                } catch (e) {}
+            }
+        }, 4000);
+
+        // Instant refetch when admin tab comes into focus
+        const handleFocus = () => {
+            fetchMongoData();
+            const saved = localStorage.getItem('playpeak_athletes');
+            if (saved) {
+                try { setAthletes(JSON.parse(saved)); } catch (e) {}
             }
         };
-        fetchMongoData();
+        window.addEventListener('focus', handleFocus);
+        document.addEventListener('visibilitychange', handleFocus);
+
+        return () => {
+            clearInterval(interval);
+            window.removeEventListener('focus', handleFocus);
+            document.removeEventListener('visibilitychange', handleFocus);
+        };
     }, []);
 
-    // Real-time synchronization when student registers via public QR form
+    // Instant cross-tab real-time sync via BroadcastChannel & window events
     useEffect(() => {
         const handleSync = (e) => {
             const saved = localStorage.getItem('playpeak_athletes');
@@ -465,7 +513,7 @@ const AdminDashboard = () => {
                     const parsed = JSON.parse(saved);
                     setAthletes(parsed);
                     if (e && e.detail) {
-                        showToast(`⚡ Real-Time Alert: New athlete "${e.detail.name}" self-enrolled via QR code!`, 'success');
+                        showToast(`⚡ Real-Time Alert: New athlete "${e.detail.name}" enrolled via QR code!`, 'success');
                     }
                 } catch (err) {}
             }
@@ -474,9 +522,29 @@ const AdminDashboard = () => {
         window.addEventListener('storage', handleSync);
         window.addEventListener('playpeak_athlete_enrolled', handleSync);
 
+        // BroadcastChannel listener for multi-tab zero-reload updates
+        let channel = null;
+        try {
+            channel = new BroadcastChannel('playpeak_realtime_sync');
+            channel.onmessage = (event) => {
+                if (event.data && event.data.type === 'ATHLETE_ENROLLED') {
+                    const newAth = event.data.athlete;
+                    setAthletes((prev) => {
+                        if (prev.some(a => a.id === newAth.id)) return prev;
+                        return [newAth, ...prev];
+                    });
+                    showToast(`⚡ Real-Time Alert: New athlete "${newAth.name}" (${newAth.sport}) just enrolled via QR code!`, 'success');
+                    fetchMongoData();
+                }
+            };
+        } catch (e) {}
+
         return () => {
             window.removeEventListener('storage', handleSync);
             window.removeEventListener('playpeak_athlete_enrolled', handleSync);
+            if (channel) {
+                channel.close();
+            }
         };
     }, []);
 

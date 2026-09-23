@@ -58,22 +58,29 @@ app.use((req, res, next) => {
   next();
 });
 
-// Register API Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/attendance', attendanceRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/seats', seatRoutes);
-app.use('/api/services', serviceRoutes);
-app.use('/api/payments', paymentRoutes);
-app.use('/api/athletes', athleteRoutes);
-app.use('/api/coaches', coachRoutes);
-app.use('/api/tournaments', tournamentRoutes);
-app.use('/api/physio', physioRoutes);
-app.use('/api/assessments', assessmentRoutes);
-app.use('/api/inventory', inventoryRoutes);
-app.use('/api/memberships', membershipRoutes);
-app.use('/api/inquiries', inquiryRoutes);
-app.use('/api/stats', statsRoutes);
+// Register API Routes (Mounted on both /api/... and /... for seamless proxy/Vercel compatibility)
+const routes = [
+  { path: 'auth', handler: authRoutes },
+  { path: 'attendance', handler: attendanceRoutes },
+  { path: 'users', handler: userRoutes },
+  { path: 'seats', handler: seatRoutes },
+  { path: 'services', handler: serviceRoutes },
+  { path: 'payments', handler: paymentRoutes },
+  { path: 'athletes', handler: athleteRoutes },
+  { path: 'coaches', handler: coachRoutes },
+  { path: 'tournaments', handler: tournamentRoutes },
+  { path: 'physio', handler: physioRoutes },
+  { path: 'assessments', handler: assessmentRoutes },
+  { path: 'inventory', handler: inventoryRoutes },
+  { path: 'memberships', handler: membershipRoutes },
+  { path: 'inquiries', handler: inquiryRoutes },
+  { path: 'stats', handler: statsRoutes }
+];
+
+routes.forEach(({ path, handler }) => {
+  app.use(`/api/${path}`, handler);
+  app.use(`/${path}`, handler);
+});
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

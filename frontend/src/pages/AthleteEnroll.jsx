@@ -147,9 +147,15 @@ const AthleteEnroll = () => {
                 .then(url => setPassQrDataUrl(url))
                 .catch(() => setPassQrDataUrl(''));
 
-            // Dispatch custom window event for real-time dashboard refresh
+            // Dispatch custom window event and BroadcastChannel for instant real-time admin sync without reload
             window.dispatchEvent(new Event('storage'));
             window.dispatchEvent(new CustomEvent('playpeak_athlete_enrolled', { detail: newAthlete }));
+
+            try {
+                const channel = new BroadcastChannel('playpeak_realtime_sync');
+                channel.postMessage({ type: 'ATHLETE_ENROLLED', athlete: newAthlete });
+                channel.close();
+            } catch (e) {}
         } catch (err) {
             console.error(err);
         }

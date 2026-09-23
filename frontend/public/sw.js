@@ -35,14 +35,24 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   
+  const url = event.request.url;
+  // Ignore chrome-extension, non-http schemes, and backend API requests
+  if (!url.startsWith('http://') && !url.startsWith('https://')) return;
+  if (url.includes('/api/') || url.includes('/users/') || url.includes('/athletes/') || url.includes('onrender.com')) {
+    return;
+  }
+  
   event.respondWith(
     fetch(event.request)
       .then((response) => {
-        // Cache successful responses for offline use
         if (response && response.status === 200 && response.type === 'basic') {
           const responseClone = response.clone();
           caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseClone);
+            try {
+              cache.put(event.request, responseClone);
+            } catch (err) {
+              // Ignore cache put errors
+            }
           });
         }
         return response;
