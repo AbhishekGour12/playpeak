@@ -70,6 +70,7 @@ import {
 import QRCode from 'qrcode';
 import jsPDF from 'jspdf';
 import axios from 'axios';
+import { io } from 'socket.io-client';
 import { useDispatch, useSelector } from 'react-redux';
 import { userinfo } from '../features/userinfo';
 
@@ -424,7 +425,7 @@ const AdminDashboard = () => {
 
     const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/';
 
-    // Fetch live data from MongoDB Atlas on component mount & periodic sync
+    // Fetch live data from MongoDB Atlas on component mount, tab change & socket events
     const fetchMongoData = async () => {
         try {
             const [athRes, payRes, coachRes, tourRes, phyRes, asmRes, invRes, planRes, inqRes] = await Promise.allSettled([
@@ -439,60 +440,90 @@ const AdminDashboard = () => {
                 axios.get(`${API_BASE}inquiries`),
             ]);
 
-            if (athRes.status === 'fulfilled' && athRes.value.data?.data?.length > 0) setAthletes(athRes.value.data.data);
-            if (payRes.status === 'fulfilled' && payRes.value.data?.data?.length > 0) setPayments(payRes.value.data.data);
-            if (coachRes.status === 'fulfilled' && coachRes.value.data?.data?.length > 0) setCoaches(coachRes.value.data.data);
-            if (tourRes.status === 'fulfilled' && tourRes.value.data?.data?.length > 0) setTournaments(tourRes.value.data.data);
-            if (phyRes.status === 'fulfilled' && phyRes.value.data?.data?.length > 0) setPhysioLogs(phyRes.value.data.data);
-            if (asmRes.status === 'fulfilled' && asmRes.value.data?.data?.length > 0) setAssessments(asmRes.value.data.data);
-            if (invRes.status === 'fulfilled' && invRes.value.data?.data?.length > 0) setInventory(invRes.value.data.data);
-            if (planRes.status === 'fulfilled' && planRes.value.data?.data?.length > 0) setMemberships(planRes.value.data.data);
-            if (inqRes.status === 'fulfilled' && inqRes.value.data?.data?.length > 0) setInquiries(inqRes.value.data.data);
+            if (athRes.status === 'fulfilled' && Array.isArray(athRes.value.data?.data)) setAthletes(athRes.value.data.data);
+            if (payRes.status === 'fulfilled' && Array.isArray(payRes.value.data?.data)) setPayments(payRes.value.data.data);
+            if (coachRes.status === 'fulfilled' && Array.isArray(coachRes.value.data?.data)) setCoaches(coachRes.value.data.data);
+            if (tourRes.status === 'fulfilled' && Array.isArray(tourRes.value.data?.data)) setTournaments(tourRes.value.data.data);
+            if (phyRes.status === 'fulfilled' && Array.isArray(phyRes.value.data?.data)) setPhysioLogs(phyRes.value.data.data);
+            if (asmRes.status === 'fulfilled' && Array.isArray(asmRes.value.data?.data)) setAssessments(asmRes.value.data.data);
+            if (invRes.status === 'fulfilled' && Array.isArray(invRes.value.data?.data)) setInventory(invRes.value.data.data);
+            if (planRes.status === 'fulfilled' && Array.isArray(planRes.value.data?.data)) setMemberships(planRes.value.data.data);
+            if (inqRes.status === 'fulfilled' && Array.isArray(inqRes.value.data?.data)) setInquiries(inqRes.value.data.data);
         } catch (err) {
             console.warn('MongoDB Atlas connection sync:', err.message);
         }
     };
 
-    // Initial fetch & interval polling for background multi-device real-time sync
+    // Auto-reload data whenever admin switches to another tab
+    useEffect(() => {
+        fetchMongoData();
+    }, [activeTab]);
+
+    // Live Socket.io real-time connection across all devices and QR scans
+    useEffect(() => {
+        let socket = null;
+        try {
+            const socketUrl = API_BASE.replace(/\/api\/?$/, '');
+            socket = io(socketUrl, {
+                transports: ['websocket', 'polling'],
+                reconnectionAttempts: 10,
+                reconnectionDelay: 1000
+            });
+
+            socket.on('connect', () => {
+                console.log('⚡ Connected to PlayPeak Live Real-Time Socket');
+            });
+
+            socket.on('athlete_created', (newAth) => {
+                setAthletes(prev => {
+                    if (prev.some(a => a.id === newAth.id || a._id === newAth._id)) return prev;
+                    return [newAth, ...prev];
+                });
+                showToast(`⚡ Real-Time Alert: New athlete "${newAth.name}" (${newAth.sport}) just registered via QR!`, 'success');
+            });
+
+            socket.on('athlete_updated', (updatedAth) => {
+                setAthletes(prev => prev.map(a => (a.id === updatedAth.id || a._id === updatedAth._id) ? updatedAth : a));
+            });
+
+            socket.on('athlete_deleted', (deletedAth) => {
+                setAthletes(prev => prev.filter(a => a.id !== deletedAth.id && a._id !== deletedAth._id));
+            });
+
+            socket.on('payment_recorded', (newPay) => {
+                setPayments(prev => {
+                    if (prev.some(p => p.id === newPay.id || p._id === newPay._id)) return prev;
+                    return [newPay, ...prev];
+                });
+                showToast(`💰 Real-Time: Payment recorded for ${newPay.athleteName || 'Athlete'} (₹${newPay.amount})`, 'info');
+            });
+
+            socket.on('new_inquiry_received', (newInq) => {
+                setInquiries(prev => {
+                    if (prev.some(i => i.id === newInq.id || i._id === newInq._id)) return prev;
+                    return [newInq, ...prev];
+                });
+                showToast(`📩 Real-Time Lead: New inquiry from "${newInq.name}" (${newInq.sport})`, 'info');
+            });
+        } catch (e) {
+            console.warn('Socket connection note:', e);
+        }
+
+        return () => {
+            if (socket) socket.disconnect();
+        };
+    }, [API_BASE]);
+
+    // Background interval sync (every 5 seconds) & focus refetch
     useEffect(() => {
         fetchMongoData();
 
-        // 5-second background sync for live updates from other devices / QR scans
         const interval = setInterval(() => {
             fetchMongoData();
-            const savedAthletes = localStorage.getItem('playpeak_athletes');
-            if (savedAthletes) {
-                try {
-                    const parsed = JSON.parse(savedAthletes);
-                    setAthletes(prev => {
-                        if (JSON.stringify(prev) !== JSON.stringify(parsed)) {
-                            return parsed;
-                        }
-                        return prev;
-                    });
-                } catch (e) {}
-            }
-            const savedPayments = localStorage.getItem('playpeak_payments');
-            if (savedPayments) {
-                try {
-                    const parsedPay = JSON.parse(savedPayments);
-                    setPayments(prev => {
-                        if (JSON.stringify(prev) !== JSON.stringify(parsedPay)) {
-                            return parsedPay;
-                        }
-                        return prev;
-                    });
-                } catch (e) {}
-            }
-        }, 4000);
+        }, 5000);
 
-        // Instant refetch when admin tab comes into focus
         const handleFocus = () => {
             fetchMongoData();
-            const saved = localStorage.getItem('playpeak_athletes');
-            if (saved) {
-                try { setAthletes(JSON.parse(saved)); } catch (e) {}
-            }
         };
         window.addEventListener('focus', handleFocus);
         document.addEventListener('visibilitychange', handleFocus);
@@ -507,15 +538,9 @@ const AdminDashboard = () => {
     // Instant cross-tab real-time sync via BroadcastChannel & window events
     useEffect(() => {
         const handleSync = (e) => {
-            const saved = localStorage.getItem('playpeak_athletes');
-            if (saved) {
-                try {
-                    const parsed = JSON.parse(saved);
-                    setAthletes(parsed);
-                    if (e && e.detail) {
-                        showToast(`⚡ Real-Time Alert: New athlete "${e.detail.name}" enrolled via QR code!`, 'success');
-                    }
-                } catch (err) {}
+            fetchMongoData();
+            if (e && e.detail) {
+                showToast(`⚡ Real-Time Alert: New athlete "${e.detail.name}" enrolled via QR code!`, 'success');
             }
         };
 

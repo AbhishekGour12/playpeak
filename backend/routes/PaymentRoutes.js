@@ -1,7 +1,13 @@
 import express from 'express';
+import mongoose from 'mongoose';
 import Payment from '../models/Payment.js';
 
 const router = express.Router();
+
+const getQueryFilter = (id) => {
+    const isObjectId = mongoose.Types.ObjectId.isValid(id) && /^[0-9a-fA-F]{24}$/.test(id);
+    return isObjectId ? { $or: [{ _id: id }, { id: id }] } : { id: id };
+};
 
 // GET all payments
 router.get('/', async (req, res) => {
@@ -36,7 +42,7 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
     try {
         const updated = await Payment.findOneAndUpdate(
-            { $or: [{ _id: req.params.id }, { id: req.params.id }] },
+            getQueryFilter(req.params.id),
             { $set: req.body },
             { new: true }
         );
@@ -50,7 +56,7 @@ router.put('/:id', async (req, res) => {
 // DELETE payment
 router.delete('/:id', async (req, res) => {
     try {
-        const deleted = await Payment.findOneAndDelete({ $or: [{ _id: req.params.id }, { id: req.params.id }] });
+        const deleted = await Payment.findOneAndDelete(getQueryFilter(req.params.id));
         if (!deleted) return res.status(404).json({ success: false, message: 'Payment not found' });
         res.json({ success: true, message: 'Payment record deleted' });
     } catch (err) {

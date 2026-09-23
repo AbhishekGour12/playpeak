@@ -1,7 +1,13 @@
 import express from 'express';
+import mongoose from 'mongoose';
 import Athlete from '../models/Athlete.js';
 
 const router = express.Router();
+
+const getQueryFilter = (id) => {
+    const isObjectId = mongoose.Types.ObjectId.isValid(id) && /^[0-9a-fA-F]{24}$/.test(id);
+    return isObjectId ? { $or: [{ _id: id }, { id: id }] } : { id: id };
+};
 
 // GET all athletes with optional sport and status filtering
 router.get('/', async (req, res) => {
@@ -30,7 +36,7 @@ router.get('/', async (req, res) => {
 // GET single athlete by ID
 router.get('/:id', async (req, res) => {
     try {
-        const athlete = await Athlete.findOne({ $or: [{ _id: req.params.id }, { id: req.params.id }] });
+        const athlete = await Athlete.findOne(getQueryFilter(req.params.id));
         if (!athlete) return res.status(404).json({ success: false, message: 'Athlete not found' });
         res.json({ success: true, data: athlete });
     } catch (err) {
@@ -55,7 +61,7 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
     try {
         const updated = await Athlete.findOneAndUpdate(
-            { $or: [{ _id: req.params.id }, { id: req.params.id }] },
+            getQueryFilter(req.params.id),
             { $set: req.body },
             { new: true }
         );
@@ -70,7 +76,7 @@ router.put('/:id', async (req, res) => {
 // DELETE athlete by ID
 router.delete('/:id', async (req, res) => {
     try {
-        const deleted = await Athlete.findOneAndDelete({ $or: [{ _id: req.params.id }, { id: req.params.id }] });
+        const deleted = await Athlete.findOneAndDelete(getQueryFilter(req.params.id));
         if (!deleted) return res.status(404).json({ success: false, message: 'Athlete not found' });
         if (req.io) req.io.emit('athlete_deleted', deleted);
         res.json({ success: true, message: 'Athlete removed from academy records' });

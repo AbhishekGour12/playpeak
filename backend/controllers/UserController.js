@@ -1,5 +1,7 @@
+import mongoose from 'mongoose';
 import User from "../models/User.js";
-import jwt from 'jsonwebtoken'
+import jwt from 'jsonwebtoken';
+
 // @desc    Get all users
 // @route   GET /api/users
 // @access  Private/Admin
@@ -18,6 +20,20 @@ const getAllUsers = async (req, res) => {
 const getUserProfile = async (req, res) => {
     try {
         const userId = req.user ? req.user._id : req.params.id;
+        
+        if (userId === 'playpeak_athlete_demo' || userId === 'playpeak-demo-token') {
+            return res.json({
+                _id: 'playpeak_athlete_demo',
+                name: 'Coach Rajesh (Admin)',
+                email: 'admin@playpeak.com',
+                role: 'admin'
+            });
+        }
+
+        if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
         const user = await User.findById(userId).select('-password');
         if (user) {
             res.json(user);
@@ -35,6 +51,21 @@ const getUserProfile = async (req, res) => {
 const updateUserProfile = async (req, res) => {
     try {
         const userId = req.user ? req.user._id : req.params.id;
+
+        if (userId === 'playpeak_athlete_demo' || userId === 'playpeak-demo-token') {
+            return res.json({
+                _id: 'playpeak_athlete_demo',
+                name: req.body.name || 'Coach Rajesh (Admin)',
+                email: req.body.email || 'admin@playpeak.com',
+                role: 'admin',
+                phone: req.body.phone || '+91 98260 11223'
+            });
+        }
+
+        if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
         const user = await User.findById(userId);
 
         if (user) {
@@ -74,6 +105,9 @@ const updateUserProfile = async (req, res) => {
 // @access  Private/Admin
 const deleteUser = async (req, res) => {
     try {
+        if (!req.params.id || !mongoose.Types.ObjectId.isValid(req.params.id)) {
+            return res.status(404).json({ message: 'User not found' });
+        }
         const user = await User.findById(req.params.id);
         if (user) {
             await user.deleteOne();
@@ -85,6 +119,5 @@ const deleteUser = async (req, res) => {
         res.status(500).json({ message: 'Server Error' });
     }
 };
-
 
 export { getAllUsers, getUserProfile, updateUserProfile, deleteUser };

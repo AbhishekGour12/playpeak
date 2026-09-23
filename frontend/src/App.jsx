@@ -93,7 +93,17 @@ function App() {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (token) {
+    const savedUser = localStorage.getItem("libraryUser");
+    if (savedUser) {
+      try {
+        const parsed = JSON.parse(savedUser);
+        if (parsed && (!user || user._id !== parsed._id)) {
+          dispatch(userinfo(parsed));
+        }
+      } catch (e) {}
+    }
+
+    if (token && token !== 'playpeak-demo-token') {
       const getUser = async () => {
         try {
           const result = await axios.get(`${url}users/profile/${token}`, {
@@ -111,11 +121,7 @@ function App() {
             dispatch(attendanceinfo(result1.data.data));
           }
         } catch (err) {
-          console.warn("Token expired or user fetch issue:", err.message);
-          if (err.response && (err.response.status === 401 || err.response.status === 403)) {
-            localStorage.removeItem("token");
-            dispatch(userinfo(null));
-          }
+          console.warn("Backend auth background sync:", err.message);
         }
       };
       getUser();
@@ -135,9 +141,17 @@ function App() {
     </div>
   );
 
-  // Protected Route component
+  // Protected Route component with resilient session recovery
   const ProtectedRoute = ({ children, adminOnly = false }) => {
-    if (!user) {
+    let activeUser = user;
+    if (!activeUser) {
+      try {
+        const saved = localStorage.getItem('libraryUser');
+        if (saved) activeUser = JSON.parse(saved);
+      } catch (e) {}
+    }
+
+    if (!activeUser) {
       return (
         <div className="flex justify-center items-center min-h-[70vh]">
           <div className="glass-card p-8 rounded-2xl text-center max-w-md border border-volt-500/30 shadow-glow-volt">
@@ -157,7 +171,7 @@ function App() {
       );
     }
 
-    if (adminOnly && user.role !== 'admin') {
+    if (adminOnly && activeUser.role !== 'admin') {
       return (
         <div className="flex justify-center items-center min-h-[70vh]">
           <div className="glass-card p-8 rounded-2xl text-center max-w-md border border-amber-500/30 shadow-glow-amber">

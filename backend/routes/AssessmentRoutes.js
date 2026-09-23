@@ -1,7 +1,13 @@
 import express from 'express';
+import mongoose from 'mongoose';
 import Assessment from '../models/Assessment.js';
 
 const router = express.Router();
+
+const getQueryFilter = (id) => {
+    const isObjectId = mongoose.Types.ObjectId.isValid(id) && /^[0-9a-fA-F]{24}$/.test(id);
+    return isObjectId ? { $or: [{ _id: id }, { id: id }] } : { id: id };
+};
 
 router.get('/', async (req, res) => {
     try {
@@ -14,7 +20,7 @@ router.get('/', async (req, res) => {
 
 router.post('/', async (req, res) => {
     try {
-        const id = req.body.id || `FIT-${Math.floor(100 + Math.random() * 900)}`;
+        const id = req.body.id || `ASM-${Math.floor(100 + Math.random() * 900)}`;
         const assessment = new Assessment({ ...req.body, id });
         const saved = await assessment.save();
         res.status(201).json({ success: true, data: saved });
@@ -26,7 +32,7 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
     try {
         const updated = await Assessment.findOneAndUpdate(
-            { $or: [{ _id: req.params.id }, { id: req.params.id }] },
+            getQueryFilter(req.params.id),
             { $set: req.body },
             { new: true }
         );
@@ -38,7 +44,7 @@ router.put('/:id', async (req, res) => {
 
 router.delete('/:id', async (req, res) => {
     try {
-        await Assessment.findOneAndDelete({ $or: [{ _id: req.params.id }, { id: req.params.id }] });
+        await Assessment.findOneAndDelete(getQueryFilter(req.params.id));
         res.json({ success: true, message: 'Assessment report deleted' });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
