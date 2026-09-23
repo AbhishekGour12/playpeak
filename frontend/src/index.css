@@ -1,0 +1,167 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    background-color: #080C14;
+    color: #E2E8F0;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif;
+    letter-spacing: -0.02em;
+  }
+
+  .font-tech {
+    font-family: 'Orbitron', monospace;
+  }
+
+  .font-athletic {
+    font-family: 'Teko', 'Outfit', sans-serif;
+    letter-spacing: 0.05em;
+  }
+}
+
+/* Custom Cyber Athletic Card & Background System */
+.bg-arena-canvas {
+  background-color: #080C14;
+  background-image: 
+    radial-gradient(at 10% 10%, rgba(0, 245, 155, 0.06) 0px, transparent 40%),
+    radial-gradient(at 90% 20%, rgba(0, 229, 255, 0.05) 0px, transparent 45%),
+    radial-gradient(at 50% 90%, rgba(255, 70, 85, 0.04) 0px, transparent 50%),
+    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 100% 100%, 40px 40px, 40px 40px;
+}
+
+.arena-card {
+  background: rgba(14, 22, 38, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1.25rem;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.arena-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(0, 245, 155, 0.35);
+  box-shadow: 0 16px 36px -4px rgba(0, 0, 0, 0.6), 0 0 20px -2px rgba(0, 245, 155, 0.2);
+}
+
+.clean-card {
+  background: #0E1626;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1.25rem;
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.5);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.clean-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(0, 245, 155, 0.3);
+  box-shadow: 0 20px 40px -10px rgba(0, 245, 155, 0.15);
+}
+
+.forest-card {
+  background: linear-gradient(135deg, #0B192C 0%, #082E2B 100%);
+  color: #FFFFFF;
+  border-radius: 1.25rem;
+  border: 1px solid rgba(0, 245, 155, 0.2);
+  box-shadow: 0 12px 30px -5px rgba(0, 245, 155, 0.2);
+}
+
+.volt-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 1rem;
+  border-radius: 9999px;
+  background: rgba(0, 245, 155, 0.1);
+  border: 1px solid rgba(0, 245, 155, 0.3);
+  color: #00F59B;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.pill-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 1rem;
+  border-radius: 9999px;
+  background: rgba(0, 245, 155, 0.12);
+  border: 1px solid rgba(0, 245, 155, 0.3);
+  color: #00F59B;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* Glassmorphism & Cyber Overlays */
+.glass-panel {
+  background: rgba(14, 22, 38, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.glass-card {
+  background: rgba(14, 22, 38, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1.25rem;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card:hover {
+  box-shadow: 0 16px 36px -6px rgba(0, 245, 155, 0.25);
+  border-color: rgba(0, 245, 155, 0.4);
+  transform: translateY(-3px);
+}
+
+.glass-navbar {
+  background: rgba(8, 12, 20, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-input {
+  background: rgba(14, 22, 38, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #F8FAFC;
+  transition: all 0.2s ease;
+}
+
+.glass-input:focus {
+  border-color: #00F59B;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0, 245, 155, 0.2);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #080C14;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #00F59B;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #05c77e;
+}
