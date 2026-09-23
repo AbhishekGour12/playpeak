@@ -120,7 +120,7 @@ const Payments = () => {
 
     const openPlanQrModal = (plan) => {
         setSelectedQrPlan(plan);
-        const planUrl = `https://playpeak-hw9a.vercel.app/enroll?plan=${encodeURIComponent(plan.name)}`;
+        const planUrl = `https://playpeak.vercel.app/enroll?plan=${encodeURIComponent(plan.name)}`;
         QRCode.toDataURL(planUrl, { width: 320, margin: 2, color: { dark: '#0F172A', light: '#FFFFFF' } })
             .then(url => {
                 setPlanQrDataUrl(url);

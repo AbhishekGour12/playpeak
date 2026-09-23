@@ -142,7 +142,7 @@ const AthleteEnroll = () => {
             }
 
             // Generate QR code for athlete gate pass
-            const passData = `https://playpeak-hw9a.vercel.app/enroll?ref=${newAthlete.id}&sport=${encodeURIComponent(newAthlete.sport)}`;
+            const passData = `https://playpeak.vercel.app/enroll?ref=${newAthlete.id}&sport=${encodeURIComponent(newAthlete.sport)}`;
             QRCode.toDataURL(passData, { width: 320, margin: 2, color: { dark: '#0F172A', light: '#FFFFFF' } })
                 .then(url => setPassQrDataUrl(url))
                 .catch(() => setPassQrDataUrl(''));

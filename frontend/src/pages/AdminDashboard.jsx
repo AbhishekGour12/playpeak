@@ -603,8 +603,112 @@ const AdminDashboard = () => {
         }
     };
 
+    // Download Official Fee Payment Receipt PDF
+    const handleDownloadReceiptPDF = (pay) => {
+        try {
+            const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+            
+            // Header
+            doc.setFillColor(15, 23, 42);
+            doc.rect(0, 0, 210, 44, 'F');
+            
+            // Accent line
+            doc.setFillColor(255, 106, 26);
+            doc.rect(0, 44, 210, 3, 'F');
+
+            // Header titles
+            doc.setFontSize(22);
+            doc.setTextColor(255, 255, 255);
+            doc.setFont('helvetica', 'bold');
+            doc.text("PLAYPEAK SPORTS ACADEMY", 105, 20, { align: "center" });
+
+            doc.setFontSize(9);
+            doc.setTextColor(255, 106, 26);
+            doc.text("OFFICIAL FEE PAYMENT RECEIPT & TAX INVOICE", 105, 29, { align: "center" });
+
+            doc.setFontSize(8);
+            doc.setTextColor(203, 213, 225);
+            doc.text("Indore Olympic Sports Complex | Helpline: +91 98765 43210 | info@playpeaksports.com", 105, 36, { align: "center" });
+
+            // Main Details Container
+            doc.setDrawColor(226, 232, 240);
+            doc.setFillColor(248, 250, 252);
+            doc.roundedRect(15, 54, 180, 195, 4, 4, 'FD');
+
+            doc.setFontSize(15);
+            doc.setTextColor(15, 23, 42);
+            doc.setFont('helvetica', 'bold');
+            doc.text("FEE PAYMENT RECEIPT", 25, 68);
+
+            doc.setFontSize(10);
+            doc.setTextColor(255, 106, 26);
+            doc.text(`Receipt #: ${pay.receiptNo || pay.id}`, 185, 68, { align: "right" });
+
+            // Divider line
+            doc.setDrawColor(226, 232, 240);
+            doc.line(25, 74, 185, 74);
+
+            const details = [
+                { label: "Athlete Name", value: pay.athleteName },
+                { label: "Sport Discipline", value: pay.sport },
+                { label: "Membership Plan", value: pay.plan || "Pro Academy Pass" },
+                { label: "Transaction / Ref ID", value: pay.id },
+                { label: "Date of Payment", value: pay.date || new Date().toISOString().split('T')[0] },
+                { label: "Payment Mode", value: pay.method || "UPI Reception" },
+                { label: "Payment Status", value: pay.status || "Completed" },
+                { label: "Next Due Date", value: pay.dueDate || "N/A" }
+            ];
+
+            let curY = 86;
+            details.forEach(item => {
+                doc.setFontSize(9.5);
+                doc.setTextColor(100, 116, 139);
+                doc.setFont('helvetica', 'normal');
+                doc.text(item.label, 25, curY);
+
+                doc.setTextColor(15, 23, 42);
+                doc.setFont('helvetica', 'bold');
+                doc.text(String(item.value), 90, curY);
+                curY += 10.5;
+            });
+
+            // Total Box
+            doc.setFillColor(255, 247, 237);
+            doc.setDrawColor(254, 215, 170);
+            doc.roundedRect(25, 180, 160, 24, 3, 3, 'FD');
+
+            doc.setFontSize(11);
+            doc.setTextColor(194, 65, 12);
+            doc.setFont('helvetica', 'bold');
+            doc.text("TOTAL AMOUNT RECEIVED:", 35, 195);
+
+            doc.setFontSize(16);
+            doc.setTextColor(234, 88, 12);
+            doc.text(`INR ${Number(pay.amount || 0).toLocaleString()}`, 175, 195, { align: "right" });
+
+            // Note
+            doc.setFontSize(8);
+            doc.setTextColor(100, 116, 139);
+            doc.setFont('helvetica', 'italic');
+            doc.text("This is an electronically generated official receipt issued by PlayPeak Sports Academy.", 105, 230, { align: "center" });
+
+            // Footer
+            doc.setFillColor(15, 23, 42);
+            doc.rect(0, 275, 210, 22, 'F');
+            doc.setFontSize(8);
+            doc.setTextColor(203, 213, 225);
+            doc.text("PlayPeak Sports Arena, Olympic Complex Road | Helpline: +91 98765 43210", 105, 287, { align: "center" });
+
+            doc.save(`PlayPeak_Receipt_${pay.receiptNo || pay.id}.pdf`);
+            showToast(`Receipt PDF (${pay.receiptNo || pay.id}) downloaded!`);
+        } catch (err) {
+            console.error("Receipt PDF generation error:", err);
+            showToast("Error generating receipt PDF.", "error");
+        }
+    };
+
     // Base URL for PlayPeak Production QR Codes & Links
-    const PLAYPEAK_BASE_URL = 'https://playpeak-hw9a.vercel.app';
+    const PLAYPEAK_BASE_URL = 'https://playpeak.vercel.app';
 
     // Generate QR Code for Self-Enrollment
     const handleOpenQrModal = () => {
@@ -1183,45 +1287,7 @@ const AdminDashboard = () => {
         showToast(`Opened WhatsApp reminder for ${athlete.name}`);
     };
 
-    // Print Receipt as PDF
-    const handleDownloadReceiptPDF = (pay) => {
-        try {
-            const doc = new jsPDF();
-            doc.setFontSize(22);
-            doc.setTextColor(255, 106, 26);
-            doc.text("PlayPeak Sports Academy", 20, 25);
-            
-            doc.setFontSize(10);
-            doc.setTextColor(100);
-            doc.text("Olympic Complex Road, Indore, MP | info@playpeaksports.com | +91 98765 43210", 20, 32);
-            doc.line(20, 36, 190, 36);
 
-            doc.setFontSize(14);
-            doc.setTextColor(30);
-            doc.text("OFFICIAL FEE RECEIPT", 20, 48);
-
-            doc.setFontSize(11);
-            doc.text(`Receipt Number: ${pay.receiptNo || pay.id}`, 20, 60);
-            doc.text(`Date of Payment: ${pay.date}`, 20, 68);
-            doc.text(`Athlete Name: ${pay.athleteName}`, 20, 76);
-            doc.text(`Sport Discipline: ${pay.sport}`, 20, 84);
-            doc.text(`Membership Plan: ${pay.plan}`, 20, 92);
-            doc.text(`Payment Mode: ${pay.method}`, 20, 100);
-            doc.text(`Amount Received: INR ${pay.amount}`, 20, 108);
-            doc.text(`Status: ${pay.status}`, 20, 116);
-
-            doc.line(20, 125, 190, 125);
-            doc.setFontSize(10);
-            doc.setTextColor(120);
-            doc.text("Thank you for training with PlayPeak. Keep rising!", 20, 135);
-            doc.text("Authorized Signatory: Head Administrator", 130, 155);
-
-            doc.save(`PlayPeak_Receipt_${pay.athleteName.replace(/\s+/g, '_')}.pdf`);
-            showToast(`Receipt PDF for ${pay.athleteName} downloaded!`);
-        } catch (e) {
-            window.print();
-        }
-    };
 
     // Calculate Summary Stats
     const totalAthletesCount = athletes.length;
@@ -3062,51 +3128,686 @@ const AdminDashboard = () => {
             </AnimatePresence>
 
             {/* ========================================================================= */}
-            {/* MODAL 3: PWA MOBILE APP INSTALL GUIDE MODAL */}
+            {/* MODAL 3A: ADD / EDIT FEE PAYMENT */}
             {/* ========================================================================= */}
             <AnimatePresence>
-                {showInstallModal && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+                {showAddPaymentModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
                         <motion.div
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.95 }}
-                            className="bg-white rounded-3xl max-w-sm w-full shadow-2xl border border-slate-100 overflow-hidden p-6 space-y-4 text-center"
+                            className="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-slate-100 overflow-hidden my-8"
                         >
-                            <div className="w-14 h-14 rounded-2xl bg-orange-50 text-[#FF6A1A] flex items-center justify-center text-3xl mx-auto shadow-sm">
-                                <FiSmartphone />
+                            <div className="p-6 bg-slate-950 text-white flex items-center justify-between">
+                                <div>
+                                    <span className="text-[10px] font-bold text-[#FF6A1A] uppercase tracking-wider block">FEES & BILLING</span>
+                                    <h3 className="font-display font-bold text-lg">
+                                        {editingPayment ? 'Edit Payment Record' : 'Record Fee Payment'}
+                                    </h3>
+                                </div>
+                                <button onClick={() => setShowAddPaymentModal(false)} className="p-1 text-slate-400 hover:text-white">
+                                    <FiX className="text-lg" />
+                                </button>
                             </div>
 
-                            <div className="space-y-1">
-                                <h3 className="font-display font-extrabold text-xl text-slate-900">
-                                    Install PlayPeak Admin App
-                                </h3>
-                                <p className="text-xs text-slate-500">
-                                    Access the full admin dashboard from your mobile phone home screen with 1-tap instant launch.
-                                </p>
+                            <form onSubmit={handleSavePayment} className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-700 mb-1">Select Athlete or Enter Name *</label>
+                                    <div className="space-y-2">
+                                        <select
+                                            onChange={(e) => {
+                                                const selected = athletes.find(a => a.name === e.target.value);
+                                                if (selected) {
+                                                    setPaymentForm({
+                                                        ...paymentForm,
+                                                        athleteName: selected.name,
+                                                        sport: selected.sport,
+                                                        plan: selected.membership || `${selected.sport} ${selected.planType || 'Monthly'} Pass`,
+                                                        amount: selected.dueAmount > 0 ? selected.dueAmount : selected.feeAmount || 3999
+                                                    });
+                                                }
+                                            }}
+                                            className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+                                        >
+                                            <option value="">-- Choose Registered Athlete --</option>
+                                            {athletes.map(a => (
+                                                <option key={a.id} value={a.name}>
+                                                    {a.name} ({a.sport} - {a.dueAmount > 0 ? `Due: ₹${a.dueAmount}` : 'Paid'})
+                                                </option>
+                                            ))}
+                                        </select>
+                                        <input
+                                            type="text"
+                                            value={paymentForm.athleteName}
+                                            onChange={(e) => setPaymentForm({ ...paymentForm, athleteName: e.target.value })}
+                                            placeholder="Athlete Full Name *"
+                                            className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#FF6A1A]"
+                                            required
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-700 mb-1">Sport Discipline</label>
+                                        <select
+                                            value={paymentForm.sport}
+                                            onChange={(e) => setPaymentForm({ ...paymentForm, sport: e.target.value })}
+                                            className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+                                        >
+                                            {sportsList.map(s => <option key={s.name} value={s.name}>{s.name}</option>)}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-700 mb-1">Membership / Pass Plan</label>
+                                        <input
+                                            type="text"
+                                            value={paymentForm.plan}
+                                            onChange={(e) => setPaymentForm({ ...paymentForm, plan: e.target.value })}
+                                            placeholder="e.g. Pro Academy Monthly"
+                                            className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+                                            required
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-700 mb-1">Amount Paid (₹) *</label>
+                                        <input
+                                            type="number"
+                                            value={paymentForm.amount}
+                                            onChange={(e) => setPaymentForm({ ...paymentForm, amount: Number(e.target.value) })}
+                                            placeholder="3999"
+                                            className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-emerald-600 focus:outline-none focus:border-[#FF6A1A]"
+                                            required
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-700 mb-1">Payment Method</label>
+                                        <select
+                                            value={paymentForm.method}
+                                            onChange={(e) => setPaymentForm({ ...paymentForm, method: e.target.value })}
+                                            className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+                                        >
+                                            <option value="UPI (GPay / PhonePe / Paytm)">UPI (GPay / PhonePe / Paytm)</option>
+                                            <option value="Reception Cash Desk">Reception Cash Desk</option>
+                                            <option value="Credit / Debit Card POS">Credit / Debit Card POS</option>
+                                            <option value="Net Banking / NEFT / IMPS">Net Banking / NEFT / IMPS</option>
+                                            <option value="Online QR Pass">Online QR Pass</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-700 mb-1">Payment Status</label>
+                                        <select
+                                            value={paymentForm.status}
+                                            onChange={(e) => setPaymentForm({ ...paymentForm, status: e.target.value })}
+                                            className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+                                        >
+                                            <option value="Completed">Completed</option>
+                                            <option value="Pending">Pending Verification</option>
+                                            <option value="Partial">Partial Installment</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-700 mb-1">Next Renewal / Due Date</label>
+                                        <input
+                                            type="date"
+                                            value={paymentForm.dueDate}
+                                            onChange={(e) => setPaymentForm({ ...paymentForm, dueDate: e.target.value })}
+                                            className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="pt-2 flex gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowAddPaymentModal(false)}
+                                        className="flex-1 py-3 rounded-xl bg-slate-100 text-slate-700 font-bold text-xs"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        className="flex-1 py-3 rounded-xl bg-[#FF6A1A] text-white font-bold text-xs uppercase tracking-wider shadow-md shadow-orange-500/20"
+                                    >
+                                        {editingPayment ? 'Update Payment' : 'Save & Issue Receipt'}
+                                    </button>
+                                </div>
+                            </form>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* ========================================================================= */}
+            {/* MODAL 3B: ADD / EDIT COACH */}
+            {/* ========================================================================= */}
+            <AnimatePresence>
+                {showAddCoachModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-slate-100 overflow-hidden my-8"
+                        >
+                            <div className="p-6 bg-slate-950 text-white flex items-center justify-between">
+                                <div>
+                                    <span className="text-[10px] font-bold text-[#FF6A1A] uppercase tracking-wider block">TECHNICAL STAFF</span>
+                                    <h3 className="font-display font-bold text-lg">
+                                        {editingCoach ? 'Edit Coach Profile' : 'Add New Coach / Mentor'}
+                                    </h3>
+                                </div>
+                                <button onClick={() => setShowAddCoachModal(false)} className="p-1 text-slate-400 hover:text-white">
+                                    <FiX className="text-lg" />
+                                </button>
                             </div>
 
-                            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 text-left text-xs text-slate-700 space-y-2">
-                                <p className="flex items-start gap-2">
-                                    <strong className="text-[#FF6A1A]">1.</strong>
-                                    <span>Tap your browser menu (<strong>⋮</strong> on Chrome or <strong>Share ⎋</strong> on Safari).</span>
-                                </p>
-                                <p className="flex items-start gap-2">
-                                    <strong className="text-[#FF6A1A]">2.</strong>
-                                    <span>Select <strong>"Add to Home Screen"</strong> or <strong>"Install App"</strong>.</span>
-                                </p>
-                                <p className="flex items-start gap-2">
-                                    <strong className="text-[#FF6A1A]">3.</strong>
-                                    <span>Enjoy native offline-capable admin management!</span>
-                                </p>
+                            <form onSubmit={handleSaveCoach} className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-700 mb-1">Coach Full Name *</label>
+                                    <input
+                                        type="text"
+                                        value={coachForm.name}
+                                        onChange={(e) => setCoachForm({ ...coachForm, name: e.target.value })}
+                                        placeholder="e.g. Coach Rajesh Sharma"
+                                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#FF6A1A]"
+                                        required
+                                    />
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-700 mb-1">Sport Discipline</label>
+                                        <select
+                                            value={coachForm.sport}
+                                            onChange={(e) => setCoachForm({ ...coachForm, sport: e.target.value })}
+                                            className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+                                        >
+                                            {sportsList.map(s => <option key={s.name} value={s.name}>{s.name}</option>)}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-700 mb-1">Certification / License *</label>
+                                        <input
+                                            type="text"
+                                            value={coachForm.certification}
+                                            onChange={(e) => setCoachForm({ ...coachForm, certification: e.target.value })}
+                                            placeholder="AFC Pro License & UEFA-A"
+                                            className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+                                            required
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-700 mb-1">Phone Number *</label>
+                                        <input
+                                            type="tel"
+                                            value={coachForm.phone}
+                                            onChange={(e) => setCoachForm({ ...coachForm, phone: e.target.value })}
+                                            placeholder="+91 98765 43210"
+                                            className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+                                            required
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-700 mb-1">Email Address</label>
+                                        <input
+                                            type="email"
+                                            value={coachForm.email}
+                                            onChange={(e) => setCoachForm({ ...coachForm, email: e.target.value })}
+                                            placeholder="coach@playpeaksports.com"
+                                            className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-3 gap-3">
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-700 mb-1">Experience (Yrs)</label>
+                                        <input
+                                            type="number"
+                                            value={coachForm.experience}
+                                            onChange={(e) => setCoachForm({ ...coachForm, experience: Number(e.target.value) })}
+                                            className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-700 mb-1">Active Trainees</label>
+                                        <input
+                                            type="number"
+                                            value={coachForm.trainees}
+                                            onChange={(e) => setCoachForm({ ...coachForm, trainees: Number(e.target.value) })}
+                                            className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-700 mb-1">Rating (★)</label>
+                                        <input
+                                            type="number"
+                                            step="0.1"
+                                            max="5.0"
+                                            min="1.0"
+                                            value={coachForm.rating}
+                                            onChange={(e) => setCoachForm({ ...coachForm, rating: Number(e.target.value) })}
+                                            className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-amber-600"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-700 mb-1">Monthly Compensation</label>
+                                    <input
+                                        type="text"
+                                        value={coachForm.monthlySalary}
+                                        onChange={(e) => setCoachForm({ ...coachForm, monthlySalary: e.target.value })}
+                                        placeholder="₹60,000"
+                                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+                                    />
+                                </div>
+
+                                <div className="pt-2 flex gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowAddCoachModal(false)}
+                                        className="flex-1 py-3 rounded-xl bg-slate-100 text-slate-700 font-bold text-xs"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        className="flex-1 py-3 rounded-xl bg-[#FF6A1A] text-white font-bold text-xs uppercase tracking-wider shadow-md shadow-orange-500/20"
+                                    >
+                                        {editingCoach ? 'Save Changes' : 'Register Coach'}
+                                    </button>
+                                </div>
+                            </form>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* ========================================================================= */}
+            {/* MODAL 3C: ADD / EDIT INVENTORY */}
+            {/* ========================================================================= */}
+            <AnimatePresence>
+                {showAddInventoryModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-slate-100 overflow-hidden my-8"
+                        >
+                            <div className="p-6 bg-slate-950 text-white flex items-center justify-between">
+                                <div>
+                                    <span className="text-[10px] font-bold text-[#FF6A1A] uppercase tracking-wider block">FACILITY ASSETS</span>
+                                    <h3 className="font-display font-bold text-lg">
+                                        {editingInventory ? 'Edit Equipment Item' : 'Add Equipment Item'}
+                                    </h3>
+                                </div>
+                                <button onClick={() => setShowAddInventoryModal(false)} className="p-1 text-slate-400 hover:text-white">
+                                    <FiX className="text-lg" />
+                                </button>
                             </div>
 
-                            <button
-                                onClick={() => setShowInstallModal(false)}
-                                className="w-full py-3 rounded-xl bg-slate-900 text-white font-bold text-xs uppercase tracking-wider"
-                            >
-                                Got It
-                            </button>
+                            <form onSubmit={handleSaveInventory} className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-700 mb-1">Equipment Name *</label>
+                                    <input
+                                        type="text"
+                                        value={inventoryForm.name}
+                                        onChange={(e) => setInventoryForm({ ...inventoryForm, name: e.target.value })}
+                                        placeholder="e.g. FIFA Quality Pro Match Balls"
+                                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#FF6A1A]"
+                                        required
+                                    />
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-700 mb-1">Sport</label>
+                                        <select
+                                            value={inventoryForm.sport}
+                                            onChange={(e) => setInventoryForm({ ...inventoryForm, sport: e.target.value })}
+                                            className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+                                        >
+                                            {sportsList.map(s => <option key={s.name} value={s.name}>{s.name}</option>)}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-700 mb-1">Category</label>
+                                        <select
+                                            value={inventoryForm.category}
+                                            onChange={(e) => setInventoryForm({ ...inventoryForm, category: e.target.value })}
+                                            className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+                                        >
+                                            <option value="Balls & Turf Gear">Balls & Turf Gear</option>
+                                            <option value="Rackets & Bats">Rackets & Bats</option>
+                                            <option value="Protective & Safety Gear">Protective & Safety Gear</option>
+                                            <option value="Fitness & Conditioning">Fitness & Conditioning</option>
+                                            <option value="Electronics & Timing Sensors">Electronics & Timing Sensors</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-3 gap-3">
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-700 mb-1">Total Stock</label>
+                                        <input
+                                            type="number"
+                                            value={inventoryForm.totalQty}
+                                            onChange={(e) => setInventoryForm({ ...inventoryForm, totalQty: Number(e.target.value) })}
+                                            className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-700 mb-1">Available Qty</label>
+                                        <input
+                                            type="number"
+                                            value={inventoryForm.availableQty}
+                                            onChange={(e) => setInventoryForm({ ...inventoryForm, availableQty: Number(e.target.value) })}
+                                            className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-700 mb-1">Low Alert Limit</label>
+                                        <input
+                                            type="number"
+                                            value={inventoryForm.minThreshold}
+                                            onChange={(e) => setInventoryForm({ ...inventoryForm, minThreshold: Number(e.target.value) })}
+                                            className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-700 mb-1">Storage Location</label>
+                                        <input
+                                            type="text"
+                                            value={inventoryForm.location}
+                                            onChange={(e) => setInventoryForm({ ...inventoryForm, location: e.target.value })}
+                                            placeholder="Ground Equipment Shed"
+                                            className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-700 mb-1">Unit Cost</label>
+                                        <input
+                                            type="text"
+                                            value={inventoryForm.unitCost}
+                                            onChange={(e) => setInventoryForm({ ...inventoryForm, unitCost: e.target.value })}
+                                            placeholder="₹1,500"
+                                            className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="pt-2 flex gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowAddInventoryModal(false)}
+                                        className="flex-1 py-3 rounded-xl bg-slate-100 text-slate-700 font-bold text-xs"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        className="flex-1 py-3 rounded-xl bg-[#FF6A1A] text-white font-bold text-xs uppercase tracking-wider shadow-md shadow-orange-500/20"
+                                    >
+                                        {editingInventory ? 'Update Item' : 'Add Item'}
+                                    </button>
+                                </div>
+                            </form>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* ========================================================================= */}
+            {/* MODAL 3D: ADD / EDIT MEMBERSHIP PLAN */}
+            {/* ========================================================================= */}
+            <AnimatePresence>
+                {showAddPlanModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-slate-100 overflow-hidden my-8"
+                        >
+                            <div className="p-6 bg-slate-950 text-white flex items-center justify-between">
+                                <div>
+                                    <span className="text-[10px] font-bold text-[#FF6A1A] uppercase tracking-wider block">MEMBERSHIP PACKAGE</span>
+                                    <h3 className="font-display font-bold text-lg">
+                                        {editingPlan ? 'Edit Membership Plan' : 'Create New Membership Plan'}
+                                    </h3>
+                                </div>
+                                <button onClick={() => setShowAddPlanModal(false)} className="p-1 text-slate-400 hover:text-white">
+                                    <FiX className="text-lg" />
+                                </button>
+                            </div>
+
+                            <form onSubmit={handleSavePlan} className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-700 mb-1">Plan Title *</label>
+                                    <input
+                                        type="text"
+                                        value={planForm.name}
+                                        onChange={(e) => setPlanForm({ ...planForm, name: e.target.value })}
+                                        placeholder="e.g. Pro Cricket Academy Annual"
+                                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#FF6A1A]"
+                                        required
+                                    />
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-700 mb-1">Sport Cohort</label>
+                                        <select
+                                            value={planForm.sport}
+                                            onChange={(e) => setPlanForm({ ...planForm, sport: e.target.value })}
+                                            className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+                                        >
+                                            <option value="All">All Disciplines</option>
+                                            {sportsList.map(s => <option key={s.name} value={s.name}>{s.name}</option>)}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-700 mb-1">Duration</label>
+                                        <select
+                                            value={planForm.duration}
+                                            onChange={(e) => setPlanForm({ ...planForm, duration: e.target.value })}
+                                            className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+                                        >
+                                            <option value="1 Month">1 Month</option>
+                                            <option value="3 Months">3 Months (Quarterly)</option>
+                                            <option value="6 Months">6 Months (Half-Yearly)</option>
+                                            <option value="1 Year">1 Year (Annual VIP)</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-700 mb-1">Package Fee (₹) *</label>
+                                        <input
+                                            type="number"
+                                            value={planForm.price}
+                                            onChange={(e) => setPlanForm({ ...planForm, price: Number(e.target.value) })}
+                                            placeholder="3999"
+                                            className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900"
+                                            required
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-700 mb-1">Badge Tag</label>
+                                        <select
+                                            value={planForm.badge}
+                                            onChange={(e) => setPlanForm({ ...planForm, badge: e.target.value })}
+                                            className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+                                        >
+                                            <option value="Popular">Popular</option>
+                                            <option value="Best Value">Best Value</option>
+                                            <option value="Elite Pro">Elite Pro</option>
+                                            <option value="Weekend Special">Weekend Special</option>
+                                            <option value="Starter">Starter</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-700 mb-1">Included Perks & Features (1 per line)</label>
+                                    <textarea
+                                        rows="4"
+                                        value={planForm.featuresText}
+                                        onChange={(e) => setPlanForm({ ...planForm, featuresText: e.target.value })}
+                                        placeholder="3 Pro Coaching Sessions/Wk&#10;Turf Floodlight Access&#10;Official Jersey Kit&#10;Physio Lab Discount"
+                                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+                                    />
+                                </div>
+
+                                <div className="pt-2 flex gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowAddPlanModal(false)}
+                                        className="flex-1 py-3 rounded-xl bg-slate-100 text-slate-700 font-bold text-xs"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        className="flex-1 py-3 rounded-xl bg-[#FF6A1A] text-white font-bold text-xs uppercase tracking-wider shadow-md shadow-orange-500/20"
+                                    >
+                                        {editingPlan ? 'Save Plan Changes' : 'Create Plan'}
+                                    </button>
+                                </div>
+                            </form>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* ========================================================================= */}
+            {/* MODAL 3E: ADD / EDIT INQUIRY LEAD */}
+            {/* ========================================================================= */}
+            <AnimatePresence>
+                {showAddInquiryModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-slate-100 overflow-hidden my-8"
+                        >
+                            <div className="p-6 bg-slate-950 text-white flex items-center justify-between">
+                                <div>
+                                    <span className="text-[10px] font-bold text-[#FF6A1A] uppercase tracking-wider block">CRM LEADS</span>
+                                    <h3 className="font-display font-bold text-lg">
+                                        {editingInquiry ? 'Edit Inquiry / Lead' : 'Add Trial Lead / Inquiry'}
+                                    </h3>
+                                </div>
+                                <button onClick={() => setShowAddInquiryModal(false)} className="p-1 text-slate-400 hover:text-white">
+                                    <FiX className="text-lg" />
+                                </button>
+                            </div>
+
+                            <form onSubmit={handleSaveInquiry} className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-700 mb-1">Prospect / Parent Name *</label>
+                                    <input
+                                        type="text"
+                                        value={inquiryForm.name}
+                                        onChange={(e) => setInquiryForm({ ...inquiryForm, name: e.target.value })}
+                                        placeholder="e.g. Manish Rawat"
+                                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#FF6A1A]"
+                                        required
+                                    />
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-700 mb-1">Phone Number *</label>
+                                        <input
+                                            type="tel"
+                                            value={inquiryForm.phone}
+                                            onChange={(e) => setInquiryForm({ ...inquiryForm, phone: e.target.value })}
+                                            placeholder="+91 98260 99887"
+                                            className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+                                            required
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-700 mb-1">Email Address</label>
+                                        <input
+                                            type="email"
+                                            value={inquiryForm.email}
+                                            onChange={(e) => setInquiryForm({ ...inquiryForm, email: e.target.value })}
+                                            placeholder="manish@gmail.com"
+                                            className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-700 mb-1">Sport Interested</label>
+                                        <select
+                                            value={inquiryForm.sport}
+                                            onChange={(e) => setInquiryForm({ ...inquiryForm, sport: e.target.value })}
+                                            className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+                                        >
+                                            {sportsList.map(s => <option key={s.name} value={s.name}>{s.name}</option>)}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-700 mb-1">Age Group</label>
+                                        <input
+                                            type="text"
+                                            value={inquiryForm.ageGroup}
+                                            onChange={(e) => setInquiryForm({ ...inquiryForm, ageGroup: e.target.value })}
+                                            placeholder="Under 14 (Son)"
+                                            className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-700 mb-1">Message / Training Requirements</label>
+                                    <textarea
+                                        rows="3"
+                                        value={inquiryForm.message}
+                                        onChange={(e) => setInquiryForm({ ...inquiryForm, message: e.target.value })}
+                                        placeholder="Looking for trial coaching session on Saturday..."
+                                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+                                    />
+                                </div>
+
+                                <div className="pt-2 flex gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowAddInquiryModal(false)}
+                                        className="flex-1 py-3 rounded-xl bg-slate-100 text-slate-700 font-bold text-xs"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        className="flex-1 py-3 rounded-xl bg-[#FF6A1A] text-white font-bold text-xs uppercase tracking-wider shadow-md shadow-orange-500/20"
+                                    >
+                                        {editingInquiry ? 'Update Lead' : 'Save Lead'}
+                                    </button>
+                                </div>
+                            </form>
                         </motion.div>
                     </div>
                 )}

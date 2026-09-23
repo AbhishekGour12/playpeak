@@ -31,7 +31,7 @@ import jsPDF from 'jspdf';
 const url = import.meta.env.VITE_API_URL;
 const qrConfig = { fps: 10, qrbox: { width: 250, height: 250 } };
 const qrReaderId = "qr-code-reader";
-const PLAYPEAK_QR_URL = "https://playpeak-hw9a.vercel.app/qr-checkin";
+const PLAYPEAK_QR_URL = "https://playpeak.vercel.app/qr-checkin";
 
 const QRCheckIn = () => {
     const [scanResult, setScanResult] = useState('');
@@ -64,7 +64,7 @@ const QRCheckIn = () => {
         'Cricket Pitch & Practice Nets #6'
     ];
 
-    // Generate Gate Entry QR Code for playpeak-hw9a.vercel.app/qr-checkin
+    // Generate Gate Entry QR Code for playpeak.vercel.app/qr-checkin
     useEffect(() => {
         const fullLink = `${PLAYPEAK_QR_URL}?athlete=${encodeURIComponent(user.name || 'Pro Athlete')}&sector=${encodeURIComponent(selectedSector)}`;
         QRCode.toDataURL(fullLink, {
@@ -198,7 +198,7 @@ const QRCheckIn = () => {
                     Athlete Digital Turnstile Gate
                 </h1>
                 <p className="text-slate-300 text-sm sm:text-base">
-                    Official QR Access URL: <span className="font-mono text-[#FF6A1A] font-bold">https://playpeak-hw9a.vercel.app/qr-checkin</span>
+                    Official QR Access URL: <span className="font-mono text-[#FF6A1A] font-bold">https://playpeak.vercel.app/qr-checkin</span>
                 </p>
             </div>
 
@@ -336,7 +336,7 @@ const QRCheckIn = () => {
                                 {user.name || 'Pro Athlete Pass'}
                             </h3>
                             <p className="text-xs font-mono text-[#FF6A1A] truncate">
-                                https://playpeak-hw9a.vercel.app/qr-checkin
+                                https://playpeak.vercel.app/qr-checkin
                             </p>
                         </div>
 
